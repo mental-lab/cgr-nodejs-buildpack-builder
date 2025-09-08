@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -eu
+
+layers_dir="$1"
+
+echo "-----> Node.js Buildpack (Pack CLI Generated)"
+echo "-----> Installing dependencies with npm install"
+
+# Install dependencies if package.json exists
+if [ -f package.json ]; then
+    npm install --production
+fi
+
+echo "-----> Build completed successfully"
+
+# Create the process configuration according to CNB API 0.11 spec
+cat > "$layers_dir/launch.toml" << 'EOF'
+[[processes]]
+type = "web"
+command = ["npm", "start"]
+default = true
+EOF
+
+echo "-----> Start command: npm start"

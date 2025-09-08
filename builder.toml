@@ -1,0 +1,17 @@
+description = "Chainguard Node.js Builder"
+
+[[buildpacks]]
+  id = "mental-lab/cgr-nodejs-buildpack"
+  uri = "."
+
+[lifecycle]
+  version = "0.20.0"
+
+[[order]]
+  [[order.group]]
+    id = "mental-lab/cgr-nodejs-buildpack"
+
+[stack]
+  id = "chainguard.nodejs"
+  build-image = "chainguard-node-build:latest"
+  run-image = "chainguard-node-run:latest"

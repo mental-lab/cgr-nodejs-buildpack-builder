@@ -1,0 +1,37 @@
+name: Test Buildpack
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build stack images
+      run: |
+        docker build -t chainguard-node-build:latest -f stack/build.Dockerfile stack/
+        docker build -t chainguard-node-run:latest -f stack/run.Dockerfile stack/
+    
+    - name: Install pack CLI
+      run: |
+        curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.32.1/pack-v0.32.1-linux.tgz" | sudo tar -C /usr/local/bin/ --no-same-owner -xzv pack
+    
+    - name: Create builder
+      run: pack builder create test-builder --config builder.toml
+    
+    - name: Test with example app
+      run: |
+        mkdir test-app
+        cd test-app
+        echo '{"name": "test-app", "scripts": {"start": "node server.js"}}' > package.json
+        echo 'const http = require("http"); const server = http.createServer((req, res) => { res.end("Hello World"); }); server.listen(3000);' > server.js
+        pack build test-app --builder test-builder --path .

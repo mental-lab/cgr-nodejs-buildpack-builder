@@ -1,0 +1,18 @@
+api = "0.11"
+
+[buildpack]
+  id = "mental-lab/cgr-nodejs-buildpack"
+  version = "1.0.0"
+  name = "Chainguard Node.js Buildpack"
+  homepage = "https://github.com/mental-lab/cgr-nodejs-buildpack-builder"
+
+[[stacks]]
+  id = "chainguard.nodejs"
+
+[[targets]]
+  os = "linux"
+  arch = "amd64"
+
+[[targets]]
+  os = "linux"
+  arch = "arm64"
