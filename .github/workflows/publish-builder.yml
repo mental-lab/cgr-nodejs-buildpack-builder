@@ -67,8 +67,9 @@ jobs:
 
     - name: Install pack CLI
       run: |
-        ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
-        curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.32.1/pack-v0.32.1-linux-${ARCH}.tgz" | sudo tar -C /usr/local/bin/ --no-same-owner -xzv pack
+        ARCH=$(uname -m)
+        SUFFIX=$([ "$ARCH" = "x86_64" ] && echo "" || echo "-arm64")
+        curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.32.1/pack-v0.32.1-linux${SUFFIX}.tgz" | sudo tar -C /usr/local/bin/ --no-same-owner -xzv pack
 
     - name: Create and push builder
       run: |
