@@ -13,5 +13,5 @@ description = "Chainguard Node.js Builder"
 
 [stack]
   id = "chainguard.nodejs"
-  build-image = "chainguard-node-build:latest"
-  run-image = "chainguard-node-run:latest"
+  build-image = "ghcr.io/mental-lab/chainguard-node-build:latest"
+  run-image = "ghcr.io/mental-lab/chainguard-node-run:latest"

@@ -36,13 +36,6 @@ jobs:
         docker push ghcr.io/mental-lab/chainguard-node-build:latest
         docker push ghcr.io/mental-lab/chainguard-node-run:latest
 
-    - name: Pull and tag stack images for builder creation
-      run: |
-        docker pull ghcr.io/mental-lab/chainguard-node-build:latest
-        docker pull ghcr.io/mental-lab/chainguard-node-run:latest
-        docker tag ghcr.io/mental-lab/chainguard-node-build:latest chainguard-node-build:latest
-        docker tag ghcr.io/mental-lab/chainguard-node-run:latest chainguard-node-run:latest
-
     - name: Create and publish builder
       run: |
         pack builder create ghcr.io/mental-lab/chainguard-node-builder:latest --config builder.toml
