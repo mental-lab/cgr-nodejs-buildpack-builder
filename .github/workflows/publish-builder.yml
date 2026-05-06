@@ -29,17 +29,22 @@ jobs:
       run: |
         curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.32.1/pack-v0.32.1-linux.tgz" | sudo tar -C /usr/local/bin/ --no-same-owner -xzv pack
 
-    - name: Build and push stack images
+    - name: Build and push stack images (multi-arch)
       run: |
-        docker build -t ghcr.io/mental-lab/chainguard-node-build:latest -f stack/build.Dockerfile stack/
-        docker build -t ghcr.io/mental-lab/chainguard-node-run:latest -f stack/run.Dockerfile stack/
-        docker push ghcr.io/mental-lab/chainguard-node-build:latest
-        docker push ghcr.io/mental-lab/chainguard-node-run:latest
+        docker buildx build --platform linux/amd64,linux/arm64 \
+          -t ghcr.io/mental-lab/chainguard-node-build:latest \
+          -f stack/build.Dockerfile stack/ --push
+        docker buildx build --platform linux/amd64,linux/arm64 \
+          -t ghcr.io/mental-lab/chainguard-node-run:latest \
+          -f stack/run.Dockerfile stack/ --push
 
-    - name: Create and publish builder
+    - name: Create and publish builder (multi-arch)
       run: |
-        pack builder create ghcr.io/mental-lab/chainguard-node-builder:latest --config builder.toml
-        docker push ghcr.io/mental-lab/chainguard-node-builder:latest
+        pack builder create ghcr.io/mental-lab/chainguard-node-builder:latest \
+          --config builder.toml \
+          --targets "linux/amd64" \
+          --targets "linux/arm64" \
+          --publish
 
     - name: Test published builder
       run: |
@@ -47,4 +52,4 @@ jobs:
         cd test-publish
         echo '{"name": "test", "scripts": {"start": "node server.js"}}' > package.json
         echo 'console.log("Published builder works!"); require("http").createServer((req,res) => res.end("Success!")).listen(3000);' > server.js
-        pack build test-published --builder ghcr.io/mental-lab/chainguard-node-builder:latest --path .
+        pack build test-published --builder ghcr.io/mental-lab/chainguard-node-builder:latest --path . --pull-policy always
