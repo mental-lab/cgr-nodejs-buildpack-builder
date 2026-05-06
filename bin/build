@@ -14,11 +14,11 @@ fi
 
 echo "-----> Build completed successfully"
 
-# Create the process configuration according to CNB API 0.11 spec
 cat > "$layers_dir/launch.toml" << 'EOF'
 [[processes]]
 type = "web"
-command = ["npm", "start"]
+command = "npm"
+args = ["start"]
 default = true
 EOF
 
