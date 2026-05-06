@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
-  publish:
+  build-stacks:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,10 +28,6 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Install pack CLI
-      run: |
-        curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.32.1/pack-v0.32.1-linux.tgz" | sudo tar -C /usr/local/bin/ --no-same-owner -xzv pack
-
     - name: Build and push stack images (multi-arch)
       run: |
         docker buildx build --platform linux/amd64,linux/arm64 \
@@ -41,19 +37,65 @@ jobs:
           -t ghcr.io/mental-lab/chainguard-node-run:latest \
           -f stack/run.Dockerfile stack/ --push
 
-    - name: Create and push builder for amd64
-      run: |
-        pack builder create ghcr.io/mental-lab/chainguard-node-builder:amd64 \
-          --config builder.toml \
-          --targets "linux/amd64" \
-          --publish
+  build-builder:
+    needs: build-stacks
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            tag: amd64
+          - runner: ubuntu-24.04-arm
+            tag: arm64
+    runs-on: ${{ matrix.runner }}
 
-    - name: Create and push builder for arm64
+    steps:
+    - name: Get the code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install pack CLI
       run: |
-        pack builder create ghcr.io/mental-lab/chainguard-node-builder:arm64 \
-          --config builder.toml \
-          --targets "linux/arm64" \
-          --publish
+        ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+        curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.32.1/pack-v0.32.1-linux-${ARCH}.tgz" | sudo tar -C /usr/local/bin/ --no-same-owner -xzv pack
+
+    - name: Create and push builder
+      run: |
+        pack builder create ghcr.io/mental-lab/chainguard-node-builder:${{ matrix.tag }} --config builder.toml
+        docker push ghcr.io/mental-lab/chainguard-node-builder:${{ matrix.tag }}
+
+  publish:
+    needs: build-builder
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install pack CLI
+      run: |
+        curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.32.1/pack-v0.32.1-linux.tgz" | sudo tar -C /usr/local/bin/ --no-same-owner -xzv pack
 
     - name: Combine into multi-arch manifest
       run: |
